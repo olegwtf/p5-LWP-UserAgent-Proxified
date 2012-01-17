@@ -25,10 +25,10 @@ sub new {
 }
 
 sub simple_request {
-	my $self = shift;
+	my ($self, $request) = @_;
 	
 	my ($proxy_scheme, $proxy);
-	if (@{$self->{proxylist}}) {
+	if (!$self->{was_redirect} && @{$self->{proxylist}}) {
 		if ($self->{proxyrand}) {
 			my $i = int rand @{$self->{proxylist}};
 			$i-- unless $i % 2 == 0;
@@ -50,7 +50,7 @@ sub simple_request {
 		}
 		
 		if (defined $self->{proxyset_cb} and ref $self->{proxyset_cb} eq 'CODE') {
-			my @rv = $self->{proxyset_cb}->($_[0], $self->{proxylist}, $proxy_scheme, $proxy);
+			my @rv = $self->{proxyset_cb}->($request, $self->{proxylist}, $proxy_scheme, $proxy);
 			if (@rv == 2) {
 				($proxy_scheme, $proxy) = @rv;
 			}
@@ -59,7 +59,19 @@ sub simple_request {
 		$self->proxy($proxy_scheme, $proxy);
 	}
 	
-	return $self->SUPER::simple_request(@_);
+	my $response = $self->SUPER::simple_request(@_);
+	$self->{was_redirect} = $response->is_redirect && _in($request->method, $self->requests_redirectable);
+	return $response;
+}
+
+sub _in($$) {
+	my ($what, $where) = @_;
+	
+	foreach my $item (@$where) {
+		return 1 if ($what eq $item);
+	}
+	
+	return 0;
 }
 
 1;
