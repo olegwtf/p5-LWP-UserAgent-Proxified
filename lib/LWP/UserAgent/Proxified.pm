@@ -25,10 +25,11 @@ sub new {
 }
 
 sub simple_request {
-	my ($self, $request) = @_;
+	my $self = shift;
+	my $request = $_[0];
 	
 	my ($proxy_scheme, $proxy);
-	if (!$self->{was_redirect} && @{$self->{proxylist}}) {
+	if (!$self->{was_redirect} && $self->{proxylist} && @{$self->{proxylist}}) {
 		if ($self->{proxyrand}) {
 			my $i = int rand @{$self->{proxylist}};
 			$i-- unless $i % 2 == 0;
@@ -40,7 +41,14 @@ sub simple_request {
 			if ($self->{current_proxy} >= @{$self->{proxylist}}) {
 				$self->{current_proxy} = 0;
 				if ($self->{proxyshuffle}) {
-					@{$self->{proxylist}} = List::Util::shuffle @{$self->{proxylist}};
+					my @index = List::Util::shuffle 0..@{$self->{proxylist}}/2-1;
+					for (my $i=0; $i<@index; $i++) {
+						if ($index[$i] != $i) {
+						#exchange
+							#($self->{proxylist}[$i], $self->{proxylist}[$index[$i]]) = 
+							#($self->{proxylist}[$index[$i]], $self->{proxylist}[$i]);
+						}
+					}
 				}
 			}
 			
