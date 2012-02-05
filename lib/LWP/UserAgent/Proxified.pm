@@ -1,6 +1,7 @@
 package LWP::UserAgent::Proxified;
 
 use strict;
+use Carp;
 use base 'LWP::UserAgent';
 use List::Util;
 
@@ -16,6 +17,22 @@ sub new {
 	
 	my $self = $class->SUPER::new(%opts);
 	
+	if ($proxylist) {
+		for (my $i=0, my $l=@$proxylist; $i<$l; $i+=2) {
+			if ($proxylist->[$i+1] !~ m@^\w+://@) {
+				# form file
+				open my $fh, '<', $proxylist->[$i+1]
+					or carp "`$proxylist->[$i+1]': $!";
+				my @list = map{s/\s+//g;$_} <$fh>
+					or carp "`$proxylist->[$i+1]' is empty";
+				$proxylist->[$i+1] = shift @list;
+				if (@list) {
+					push @$proxylist, map {($proxylist->[$i], $_)} @list;
+				}
+				close $fh;
+			}
+		}
+	}
 	$self->{proxylist}    = $proxylist;
 	$self->{proxyrand}    = $proxyrand;
 	$self->{proxyshuffle} = $proxyshuffle;
