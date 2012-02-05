@@ -4,6 +4,7 @@ use strict;
 use Carp;
 use base 'LWP::UserAgent';
 use List::Util;
+use Net::Proxy::Type;
 
 our $VERSION = '0.00';
 
@@ -42,6 +43,25 @@ sub new {
 	return $self;
 }
 
+sub filter_proxylist {
+	my ($self) = @_;
+	my $checker = Net::Proxy::Type->new(strict => 1);
+	my @to_remove;
+	
+	for (my $i=0; $i<@{$self->{proxylist}}; $i+=2) {
+		my ($host) = $self->{proxylist}[$i+1] =~ m@^\w+://(.+)@;
+		my $type = $checker->get($host);
+		if ($type == Net::Proxy::Type::DEAD_PROXY || 
+		    $type == Net::Proxy::Type::UNKNOWN_PROXY) {
+			push @to_remove, $i, $i+1;
+		}
+	}
+	
+	for (my $i=$#to_remove; $i>=0; $i--) {
+		splice @{$self->{proxylist}}, $to_remove[$i], 1;
+	}
+}
+
 sub simple_request {
 	my $self = shift;
 	my $request = $_[0];
@@ -74,7 +94,7 @@ sub simple_request {
 		}
 		
 		if (defined $self->{proxyset_cb} and ref $self->{proxyset_cb} eq 'CODE') {
-			my @rv = $self->{proxyset_cb}->($request, $self->{proxylist}, $proxy_scheme, $proxy);
+			my @rv = $self->{proxyset_cb}->($self, $request, $self->{proxylist}, $proxy_scheme, $proxy);
 			if (@rv == 2) {
 				($proxy_scheme, $proxy) = @rv;
 			}
