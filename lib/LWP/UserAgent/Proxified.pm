@@ -13,6 +13,7 @@ sub new {
 	my $proxyrand    = delete $opts{proxyrand};
 	my $proxyshuffle = delete $opts{proxyshuffle};
 	my $proxyset_cb  = delete $opts{proxyset_cb};
+	
 	my $self = $class->SUPER::new(%opts);
 	
 	$self->{proxylist}    = $proxylist;
@@ -42,12 +43,10 @@ sub simple_request {
 				$self->{current_proxy} = 0;
 				if ($self->{proxyshuffle}) {
 					my @index = List::Util::shuffle 0..@{$self->{proxylist}}/2-1;
+					my @copy  = @{$self->{proxylist}};
 					for (my $i=0; $i<@index; $i++) {
-						if ($index[$i] != $i) {
-						#exchange
-							#($self->{proxylist}[$i], $self->{proxylist}[$index[$i]]) = 
-							#($self->{proxylist}[$index[$i]], $self->{proxylist}[$i]);
-						}
+						$self->{proxylist}[$i*2]   = $copy[$index[$i]*2];
+						$self->{proxylist}[$i*2+1] = $copy[$index[$i]*2+1];
 					}
 				}
 			}
