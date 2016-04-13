@@ -101,6 +101,7 @@ sub simple_request {
 		}
 		
 		$self->proxy($proxy_scheme, $proxy);
+		delete $_[0]->{proxy};
 		LWP::UserAgent::_need_proxy($_[0], $self);
 	}
 	
