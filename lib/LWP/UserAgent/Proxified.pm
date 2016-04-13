@@ -101,6 +101,7 @@ sub simple_request {
 		}
 		
 		$self->proxy($proxy_scheme, $proxy);
+		LWP::UserAgent::_need_proxy($_[0], $self);
 	}
 	
 	my $response = $self->SUPER::simple_request(@_);
